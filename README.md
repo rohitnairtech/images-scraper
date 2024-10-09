@@ -20,7 +20,7 @@ If you don't care about the source, it is probably better to use a different sea
 Give me the first 200 images of Banana's from Google (using headless browser)
 
 ```js
-var Scraper = require('images-scraper');
+const Scraper = require('images-scraper');
 
 const google = new Scraper({
   puppeteer: {
@@ -39,14 +39,16 @@ const google = new Scraper({
 `node src/example.js`
 
 ```js
-results [
+results 
+{
+  queryKey: [
   {
     url: 'https://api.time.com/wp-content/uploads/2019/11/gettyimages-459761948.jpg?quality=85&crop=0px%2C74px%2C1024px%2C536px&resize=1200%2C628&strip',
-    source: 'https://time.com/5730790/banana-panama-disease/',
-    title: 'What We Can Learn From the Near-Extinction of Bananas | Time'
+    query: 'banana',
   },
   ...
-]
+] 
+}
 ```
 
 # Example 2 Using an array in a single browser instance (save resources)
@@ -54,7 +56,7 @@ results [
 Give me the first 200 images of the following array of strings from Google (using headless browser)
 
 ```js
-var Scraper = require('images-scraper');
+const Scraper = require('images-scraper');
 
 const google = new Scraper({
   puppeteer: {
@@ -62,7 +64,8 @@ const google = new Scraper({
   },
 });
 
-var fruits = ['banana', 'tomato', 'melon', 'strawberry'](async () => {
+const fruits = ['banana', 'tomato', 'melon', 'strawberry'];
+(async () => {
   const results = await google.scrape(fruits, 200);
   console.log('results', results);
 })();
@@ -73,18 +76,23 @@ var fruits = ['banana', 'tomato', 'melon', 'strawberry'](async () => {
 `node src/example.js`
 
 ```js
-results[
+results
+{
+  queryKey1: [
   {
-    query: '<Your query string>',
-    images: [
-      {
-        url: 'https://api.time.com/wp-content/uploads/2019/11/gettyimages-459761948.jpg?quality=85&crop=0px%2C74px%2C1024px%2C536px&resize=1200%2C628&strip',
-        source: 'https://time.com/5730790/banana-panama-disease/',
-        title: 'What We Can Learn From the Near-Extinction of Bananas | Time',
-      },
-    ],
-  }
-];
+    url: 'https://api.time.com/wp-content/uploads/2019/11/gettyimages-459761948.jpg?quality=85&crop=0px%2C74px%2C1024px%2C536px&resize=1200%2C628&strip',
+    query: 'banana',
+  },
+  ...
+ ],
+ queryKey2: [
+  {
+    url: 'https://api.time.com/wp-content/uploads/2019/11/gettyimages-459761948.jpg?quality=85&crop=0px%2C74px%2C1024px%2C536px&resize=1200%2C628&strip',
+    query: 'banana',
+  },
+  ...
+ ]
+}
 ```
 
 # Options

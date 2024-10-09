@@ -1,10 +1,8 @@
 'use strict';
 
-const Scraper = require('./google');
-
-const google = new Scraper();
+const Scraper = require('./index');
 
 (async () => {
-  const results = await google.downloadImages('cat', 10);
-  console.log('results', results);
+  const results = await Scraper.downloadImages('cat', 10);
+  console.log('Download status', results);
 })();
