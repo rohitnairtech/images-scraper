@@ -1,4 +1,4 @@
-const GoogleScraper = require('./google');
+const GoogleScraper = require('./google/index');
 const logger = require('./logger');
 
 // Function to download images
