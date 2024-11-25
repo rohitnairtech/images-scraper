@@ -1,11 +1,16 @@
 'use strict';
 
-const puppeteer = require('puppeteer');
+const puppeteer = require('puppeteer-extra')
 const fs = require("fs");
 const axios = require("axios");
 const path = require('path');
 const logger = require('../logger');
 
+const StealthPlugin = require('puppeteer-extra-plugin-stealth')
+puppeteer.use(StealthPlugin());
+
+const AdblockerPlugin = require('puppeteer-extra-plugin-adblocker')
+puppeteer.use(AdblockerPlugin({ blockTrackers: true }))
 /**
  * @param {string | array} userAgent user agent
  * @param {object} puppeteer puppeteer options
@@ -21,7 +26,7 @@ class GoogleScraper {
       'Mozilla/5.0 (Linux; Android 10; SM-G970F) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.114 Mobile Safari/537.36',
     ],
     scrollDelay = 500,
-    puppeteer = { headless: true },
+    puppeteer = { headless: false },
     tbs = {},
     safe = false,
   } = {}) {
@@ -104,36 +109,76 @@ class GoogleScraper {
       await page.setUserAgent(this.userAgent);
       const queriesIsArray = Array.isArray(queries);
       const imageUrlObject = {};
-
+  
       /**
-       * Used for DRY
-       * @param {string} query 
+       * Fetch URLs for a given query
+       * @param {string} query
        */
       const getUrls = async (query) => {
-        const pageUrl = `https://www.google.com/search?${this.safe}&source=lnms&tbs=${this.tbs}&tbm=isch&q=${this._parseRequestQueries(query)}`;
+        const queryKey = query.replace(/\s/g, '');
+        imageUrlObject[queryKey] = [];
+      
+        const pageUrl = `https://www.google.com/search?${this.safe}&source=lnms&tbs=isz:l&tbm=isch&q=${this._parseRequestQueries(query)}`;
         logger.debug(pageUrl);
         await page.goto(pageUrl);
-
+      
+        // Scroll to load all thumbnails
         await page.evaluate(async () => {
           for (let i = 0; i < 10; i++) {
             window.scrollBy(0, window.innerHeight);
-            await new Promise(resolve => setTimeout(resolve, this.scrollDelay));
+            await new Promise(resolve => setTimeout(resolve, 500));
           }
         });
-
-        await page.waitForSelector('img');
-
-        const images = await page.evaluate(() => {
-          const imageElements = document.querySelectorAll('img');
-          return Array.from(imageElements)
-            .map(img => img.src)
-            .filter(url => url.startsWith('http') && !url.includes('google'));
-        });
-
-        const queryKey = query.replace(/\s/g, '');
-        imageUrlObject[queryKey] = images.slice(0, limit).map(url => ({ query, url }));
-      }
-
+      
+        // Wait for thumbnails to load
+        await page.waitForSelector('g-img.mNsIhb img.YQ4gaf', { visible: true, timeout: 30000 });
+      
+        // Collect all thumbnail elements
+        const thumbnails = await page.$$('g-img.mNsIhb img.YQ4gaf');
+        logger.info(`Found ${thumbnails.length} thumbnails for query "${query}"`);
+      
+        for (let i = 0; i < Math.min(thumbnails.length, limit); i++) {
+          try {
+            const updatedThumbnails = await page.$$('g-img.mNsIhb img.YQ4gaf');
+            const thumbnail = updatedThumbnails[i];
+      
+            if (!thumbnail) {
+              logger.warn(`Thumbnail ${i + 1} not found after refresh! Skipping...`);
+              continue;
+            }
+      
+            // Scroll thumbnail into view and click
+            await page.evaluate((thumb) => thumb.scrollIntoView({ behavior: 'smooth', block: 'center' }), thumbnail);
+            await page.waitForTimeout(500);
+            await thumbnail.click();
+      
+            // Wait for the high-resolution image to load
+            const fullImageSelector = 'img.rg_i'; // Update with the correct selector
+            await page.waitForSelector(fullImageSelector, { visible: true, timeout: 20000 });
+      
+            const fullImageUrl = await page.evaluate(() => {
+              const fullImageElement = document.querySelector('img.rg_i');
+              return fullImageElement ? fullImageElement.src : null;
+            });
+      
+            if (fullImageUrl && !imageUrlObject[queryKey].some(img => img.url === fullImageUrl)) {
+              imageUrlObject[queryKey].push({ query, url: fullImageUrl });
+              logger.info(`Extracted high-res image URL: ${fullImageUrl}`);
+            }
+          } catch (err) {
+            logger.warn(`Error processing image ${i + 1} for query "${query}": ${err.message}`);
+            await page.screenshot({ path: `error_image_${queryKey}_${i + 1}.png` });
+            const pageContent = await page.content();
+            fs.writeFileSync(`error_page_${queryKey}_${i + 1}.html`, pageContent);
+          }
+      
+          // Go back to the search results page
+          await page.goBack({ waitUntil: 'networkidle2' });
+          await page.waitForSelector('g-img.mNsIhb img.YQ4gaf', { visible: true, timeout: 30000 });
+        }
+      };
+      
+  
       if (queriesIsArray) {
         for (const query of queries) {
           await getUrls(query);
@@ -141,14 +186,15 @@ class GoogleScraper {
       } else {
         await getUrls(queries);
       }
-
+  
       await browser.close();
       return imageUrlObject;
-
+  
     } catch (err) {
       logger.error('An error occurred:', err);
     }
   }
+  
 
   _parseRequestParameters(tbs) {
     if (!tbs) {
