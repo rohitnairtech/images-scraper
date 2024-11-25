@@ -118,7 +118,7 @@ class GoogleScraper {
         const queryKey = query.replace(/\s/g, '');
         imageUrlObject[queryKey] = [];
       
-        const pageUrl = `https://www.google.com/search?${this.safe}&source=lnms&tbs=isz:l&tbm=isch&q=${this._parseRequestQueries(query)}`;
+        const pageUrl = `https://www.google.com/search?${this.safe}&source=lnms&tbs=${this.tbs},isz:l&tbm=isch&q=${this._parseRequestQueries(query)}`;
         logger.debug(pageUrl);
         await page.goto(pageUrl);
       
