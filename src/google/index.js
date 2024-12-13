@@ -18,20 +18,15 @@ puppeteer.use(AdblockerPlugin({ blockTrackers: true }))
  */
 class GoogleScraper {
   constructor({
-    userAgent = [
-      'Mozilla/5.0 (X11; Linux i686; rv:64.0) Gecko/20100101 Firefox/64.0',
-      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+    userAgent =
       'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.0 Safari/605.1.15',
-      'Mozilla/5.0 (iPhone; CPU iPhone OS 15_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.0 Mobile/15E148 Safari/604.1',
-      'Mozilla/5.0 (Linux; Android 10; SM-G970F) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.114 Mobile Safari/537.36',
-    ],
     scrollDelay = 500,
     puppeteer = { headless: false },
     tbs = {},
     safe = false,
   } = {}) {
     this.userAgent = Array.isArray(userAgent)
-      ? userAgent[Math.floor(Math.random() * userAgent.length)]
+      ? userAgent[0]
       : userAgent;
     this.scrollDelay = scrollDelay;
     this.puppeteerOptions = puppeteer;
@@ -39,7 +34,6 @@ class GoogleScraper {
     this.safe = this._isQuerySafe(safe);
     this.browser = null;
   }
-
   /**
    * Method to download images based on query
    * @param {string | string[]} queries 
@@ -103,8 +97,26 @@ class GoogleScraper {
    */
   async getImageUrl(queries, limit = 5) {
     try {
-      const browser = await puppeteer.launch({ ...this.puppeteerOptions });
-      const page = await browser.newPage();
+  console.log(this.userAgent);
+
+      const browser = await puppeteer.launch({
+        headless: false, // Turn off headless mode to see the window
+        args: [
+          '--start-maximized', // Ensure the browser starts maximized
+          '--window-size=1920,1080', // Set the window size explicitly
+        ],
+        defaultViewport: null, // Disable Puppeteer's default viewport settings
+        ...this.puppeteerOptions // Include any additional options
+      });
+    
+      const [page] = await browser.pages(); // Get the default page created at launch
+    
+      // Set custom viewport size
+      await page.setViewport({
+        width: 1920,
+        height: 1080,
+      });
+
       await page.setBypassCSP(true);
       await page.setUserAgent(this.userAgent);
       const queriesIsArray = Array.isArray(queries);
@@ -153,17 +165,22 @@ class GoogleScraper {
             await thumbnail.click();
       
             // Wait for the high-resolution image to load
-            const fullImageSelector = 'img.rg_i'; // Update with the correct selector
+            const fullImageSelector = 'img[aria-hidden="false"][jsname="kn3ccd"]'; // Ensure this matches the class in your DOM
+
+            // Wait for the full image to load after clicking the thumbnail
             await page.waitForSelector(fullImageSelector, { visible: true, timeout: 20000 });
-      
+            
             const fullImageUrl = await page.evaluate(() => {
-              const fullImageElement = document.querySelector('img.rg_i');
+              const fullImageElement = document.querySelector('img[aria-hidden="false"][jsname="kn3ccd"]');
               return fullImageElement ? fullImageElement.src : null;
             });
-      
-            if (fullImageUrl && !imageUrlObject[queryKey].some(img => img.url === fullImageUrl)) {
+            
+            
+            if (fullImageUrl) {
               imageUrlObject[queryKey].push({ query, url: fullImageUrl });
               logger.info(`Extracted high-res image URL: ${fullImageUrl}`);
+            } else {
+              logger.warn('High-resolution image not found.');
             }
           } catch (err) {
             logger.warn(`Error processing image ${i + 1} for query "${query}": ${err.message}`);

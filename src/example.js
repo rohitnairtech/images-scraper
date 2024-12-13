@@ -3,6 +3,6 @@
 const Scraper = require('./index');
 
 (async () => {
-  const results = await Scraper.downloadImages('cat', 10);
-  console.log('Download status', results);
+  const resultC = await Scraper.listImageUrls(['cat', 'dog', 'zandu balm'], 5);
+  console.log('Download status', resultC);
 })();
