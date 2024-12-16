@@ -6,17 +6,6 @@ import { MongoClient } from 'mongodb';
 const url = 'mongodb://localhost:27017';
 const dbName = 'pos_rapsap_1';
 
-async function fetchRecords() {
-  const client = new MongoClient(url);
-  try {
-    await client.connect();
-    const db = client.db(dbName);
-    const collection = db.collection('categories');
-    return collection.find({}).toArray();
-  } finally {
-    await client.close();
-  }
-}
 const client = new MongoClient(url);
 await client.connect();
 const db = client.db(dbName);
@@ -63,6 +52,7 @@ async function processAllBatches() {
   const results = await Promise.all(promises);
   const end = performance.now(); 
   console.log(`Total time: ${((end - start) / 1000) / 60} minutes`);
+  await client.close();
   return results.flat(); // Combine all results into a single array
 }
 
