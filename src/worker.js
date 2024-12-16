@@ -35,6 +35,7 @@ const checkAndCreateFolder = async (path) => {
 }
 
 async function processSubBatch(subBatch){
+  console.log(subBatch);
   const batchResult = await Scraper.listImageUrls(subBatch, 1);
   for (const itemName of Object.keys(batchResult)) {
     for (const url of batchResult[itemName]) {
@@ -53,20 +54,24 @@ async function processSubBatch(subBatch){
 }
 
 async function processBatch(batch) {
-  const numberOfBatch = Math.ceil(batch.length/50);
+  const batchSize = 10;
+  const numberOfBatch = Math.ceil(batch.length/batchSize);
+  console.log("numberOfBatch ", numberOfBatch);
   if(numberOfBatch > 1){
     const subBatches = Array.from({ length: numberOfBatch }, (_, i) =>
-      items.slice(i * numberOfBatch, (i + 1) * numberOfBatch)
+      batch.slice(i * batchSize, (i + 1) * batchSize)
     );
+    console.log("subBatches", subBatches);
     const subBatchLastIndex = subBatches.length - 1;
     if(subBatches[subBatchLastIndex].length < 10){
       subBatches[subBatchLastIndex - 1].push(...subBatches[subBatchLastIndex]);
       subBatches.pop();
     }
+    console.log("subBatches", subBatches);
     const batchResult = [];
     for(let x = 0; x < subBatches.length; x++){
-      const result = await processSubBatch(subBatches[i]);
-      batchResult.push(...result);
+      const result = await processSubBatch(subBatches[x]);
+      batchResult.push(result);
     }
     return batchResult;
   }
