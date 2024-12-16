@@ -36,7 +36,7 @@ const checkAndCreateFolder = async (path) => {
 
 async function processSubBatch(subBatch){
   console.log(subBatch);
-  const batchResult = await Scraper.listImageUrls(subBatch, 1);
+  const batchResult = await Scraper.listImageUrls(subBatch, 3);
   for (const itemName of Object.keys(batchResult)) {
     for (const url of batchResult[itemName]) {
       try {
