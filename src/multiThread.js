@@ -1,6 +1,6 @@
-const { Worker } = require("worker_threads");
-const { performance } = require("perf_hooks");
-const path = require("path");
+import { Worker } from 'worker_threads';
+import { performance } from 'perf_hooks';
+import path from 'path';
 import { MongoClient } from 'mongodb';
 
 const url = 'mongodb://localhost:27017';
