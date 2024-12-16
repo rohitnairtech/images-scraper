@@ -14,7 +14,8 @@ const collection = db.collection('items');
 // add the logic to check if 1. it has image key 2. if the array is empty
 const records = await collection.find({}).toArray(); 
 
-const items = records.map(({ _id, name }) => { _id, name });
+const items = records.map(({name, _id})=>{return {name, _id: String(_id)}});
+// const items = [{name:'maggi atta noodles', _id: 'ad3211aa'}]
 // const items = ["maggi noodles"];
 const numWorkers = 4;
 const batchSize = Math.ceil(items.length / numWorkers);

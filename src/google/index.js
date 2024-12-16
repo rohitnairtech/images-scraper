@@ -18,15 +18,18 @@ puppeteer.use(AdblockerPlugin({ blockTrackers: true }))
  */
 class GoogleScraper {
   constructor({
-    userAgent =
-      'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.0 Safari/605.1.15',
+    userAgent = [
+      'Mozilla/5.0 (Macintosh; Intel Mac OS X 12_5) AppleWebKit/537.36 (KHTML, like Gecko) Version/15.5 Safari/537.36',
+      'Mozilla/5.0 (Macintosh; Intel Mac OS X 11_6) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.1 Safari/605.1.15',
+      'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/104.0.5112.101 Safari/537.36',
+    ],
     scrollDelay = 500,
     puppeteer = { headless: false },
     tbs = {},
     safe = false,
   } = {}) {
     this.userAgent = Array.isArray(userAgent)
-      ? userAgent[0]
+      ? userAgent[Math.floor(Math.random() * userAgent.length)]
       : userAgent;
     this.scrollDelay = scrollDelay;
     this.puppeteerOptions = puppeteer;
@@ -111,6 +114,9 @@ class GoogleScraper {
     
       const [page] = await browser.pages(); // Get the default page created at launch
     
+      await page.setExtraHTTPHeaders({
+        'Accept-Language': 'en-US,en;q=0.9',
+      });
       // Set custom viewport size
       await page.setViewport({
         width: 1920,
@@ -133,6 +139,27 @@ class GoogleScraper {
         const pageUrl = `https://www.google.com/search?${this.safe}&source=lnms&tbs=${this.tbs},isz:l&tbm=isch&q=${this._parseRequestQueries(query)}`;
         logger.debug(pageUrl);
         await page.goto(pageUrl);
+
+        // to check if capctha is present, if so wait until human removes it
+        const captchaElement = await page.$('div[style*="font-size:13px"] b');
+        if (captchaElement) {
+            const captchaText = await page.evaluate(el => el.textContent, captchaElement);
+            if (captchaText.includes("About this page")) {
+                console.error("CAPTCHA detected. Waiting for manual intervention...");
+
+                // Wait for the CAPTCHA to be solved manually
+                await page.waitForFunction(
+                    () => !document.querySelector('div[style*="font-size:13px"] b'), // Wait until CAPTCHA is no longer present
+                    { timeout: 0 } // Set timeout to infinite
+                );
+
+                console.log("CAPTCHA solved. Resuming scraping...");
+            }
+        }
+
+
+
+        // to find if image not found
         const element = await page.$('div.v3jTId[role="heading"]');
         if (element) {
           const textContent = await page.evaluate(el => el.textContent, element);

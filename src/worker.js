@@ -38,11 +38,14 @@ async function processSubBatch(subBatch){
   console.log(subBatch);
   const subBatchNames = subBatch.map(({name})=>name)
   const batchResult = await Scraper.listImageUrls(subBatchNames, 3);
+  console.log(batchResult);
   for (const itemName of Object.keys(batchResult)) {
-    for (const url of batchResult[itemName]) {
+    for (const [index, url] of batchResult[itemName].entries()) {
+      console.log(`Index: ${index}, URL: ${url}`);
       try {
         const response = await axios.get(url, { responseType: "arraybuffer" });
-        await convertPngToWebp(response.data, `${process.cwd()}/userImages/${itemName}.webp`);
+        const fileName = `${itemName}-${index+1}.webp`;
+        await convertPngToWebp(response.data, `${process.cwd()}/userImages/${fileName}`);
         // file name has to be unique, for ex if three images - itemName-1, itemName-2 & itemName-3
         // write the logic to update the image in the DB 
       } catch (downloadError) {
@@ -57,7 +60,7 @@ async function processSubBatch(subBatch){
 }
 
 async function processBatch(batch) {
-  const batchSize = 10; // change this if you want to process more at a time per instance
+  const batchSize = 50; // change this if you want to process more at a time per instance
   const numberOfBatch = Math.ceil(batch.length/batchSize);
   console.log("numberOfBatch ", numberOfBatch);
   if(numberOfBatch > 1){
