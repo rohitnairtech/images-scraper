@@ -54,7 +54,7 @@ async function processSubBatch(subBatch){
 }
 
 async function processBatch(batch) {
-  const batchSize = 10;
+  const batchSize = 10; // change this if you want to process more at a time per instance
   const numberOfBatch = Math.ceil(batch.length/batchSize);
   console.log("numberOfBatch ", numberOfBatch);
   if(numberOfBatch > 1){
