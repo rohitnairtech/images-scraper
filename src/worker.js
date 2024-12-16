@@ -34,18 +34,8 @@ const checkAndCreateFolder = async (path) => {
   }
 }
 
-async function processBatch(batch) {
-  const batchResult = await Scraper.listImageUrls(batch, 1);
-  // download the image logic here
-
-  /**
-   * Loop across batchResult
-   * Use axios to get the image as buffer
-   * Pass the buffer to sharp -> convert to webp and save on disk -> inside 'userImages' folder
-   * Will do the DB operations later 
-   */
-  // console.log(Object.keys(batchResult))
-  // await checkAndCreateFolder("/userImages")
+async function processSubBatch(subBatch){
+  const batchResult = await Scraper.listImageUrls(subBatch, 1);
   for (const itemName of Object.keys(batchResult)) {
     for (const url of batchResult[itemName]) {
       try {
@@ -59,8 +49,45 @@ async function processBatch(batch) {
       }
     }
   }
+  return batchResult;
+}
 
+async function processBatch(batch) {
+  const numberOfBatch = Math.ceil(batch.length/50);
+  if(numberOfBatch > 1){
+    const subBatches = Array.from({ length: numberOfBatch }, (_, i) =>
+      items.slice(i * numberOfBatch, (i + 1) * numberOfBatch)
+    );
+    const subBatchLastIndex = subBatches.length - 1;
+    if(subBatches[subBatchLastIndex].length < 10){
+      subBatches[subBatchLastIndex - 1].push(...subBatches[subBatchLastIndex]);
+      subBatches.pop();
+    }
+    const batchResult = [];
+    for(let x = 0; x < subBatches.length; x++){
+      const result = await processSubBatch(subBatches[i]);
+      batchResult.push(...result);
+    }
+    return batchResult;
+  }
+  
+  // slice the data, loop across each subBatchs
 
+  const batchResult = await processSubBatch(batch);
+  // download the image logic here
+
+  /**
+   * Loop across batchResult
+   * Use axios to get the image as buffer
+   * Pass the buffer to sharp -> convert to webp and save on disk -> inside 'userImages' folder
+   * Will do the DB operations later 
+   */
+
+  /**
+   * We will be checking how many items are there in the batch, we will break the batches based on how many hundreds its has
+   * ex: batch with 300 data will be converted to 3 batches
+   * So that at no item extra data will be held in the node instances
+   */
   return batchResult;
 }
 
