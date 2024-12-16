@@ -13,9 +13,9 @@ const collection = db.collection('categories');
 
 const records = await collection.find({}).toArray();
 
-const items = records.map(({ name }) => name);
-// const items = ["nirma washing powder", "maggi noodles", "maggi atta noodles"];
-const numWorkers = 4;
+// const items = records.map(({ name }) => name);
+const items = ["maggi noodles"];
+const numWorkers = 1;
 const batchSize = Math.ceil(items.length / numWorkers);
 console.log(batchSize); // Batch size
 const batches = Array.from({ length: numWorkers }, (_, i) =>

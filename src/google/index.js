@@ -133,7 +133,14 @@ class GoogleScraper {
         const pageUrl = `https://www.google.com/search?${this.safe}&source=lnms&tbs=${this.tbs},isz:l&tbm=isch&q=${this._parseRequestQueries(query)}`;
         logger.debug(pageUrl);
         await page.goto(pageUrl);
-      
+        const element = await page.$('div.v3jTId[role="heading"]');
+        if (element) {
+          const textContent = await page.evaluate(el => el.textContent, element);
+          console.log(textContent.includes("It looks like there aren't any 'Images' matches on this topic"));
+          if(textContent.includes("It looks like there aren't any 'Images' matches on this topic")){
+            return;
+          }
+        }
         // Scroll to load all thumbnails
         await page.evaluate(async () => {
           for (let i = 0; i < 10; i++) {
