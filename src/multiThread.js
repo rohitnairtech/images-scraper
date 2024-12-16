@@ -8,13 +8,14 @@ const dbName = 'pos_rapsap_1';
 
 const client = new MongoClient(url);
 await client.connect();
-const db = client.db(dbName);
-const collection = db.collection('categories');
+// const db = client.db(dbName);
+// const collection = db.collection('categories');
 
-const records = await collection.find({}).toArray();
+// const records = await collection.find({}).toArray();
 
-const items = records.map(({name})=>name);
-const numWorkers = 4;
+// const items = records.map(({name})=>name);
+const items = [  "Maggi Aata noodles" ];
+const numWorkers = 1;
 const batchSize = Math.ceil(items.length / numWorkers); // Batch size
 const batches = Array.from({ length: numWorkers }, (_, i) =>
   items.slice(i * batchSize, (i + 1) * batchSize)
@@ -50,7 +51,7 @@ async function processAllBatches() {
   );
 
   const results = await Promise.all(promises);
-  const end = performance.now(); 
+  const end = performance.now();
   console.log(`Total time: ${((end - start) / 1000) / 60} minutes`);
   await client.close();
   return results.flat(); // Combine all results into a single array
