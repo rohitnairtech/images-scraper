@@ -11,7 +11,8 @@ await client.connect();
 const db = client.db(dbName);
 const collection = db.collection('items');
 
-const records = await collection.find({}).toArray();
+// add the logic to check if 1. it has image key 2. if the array is empty
+const records = await collection.find({}).toArray(); 
 
 const items = records.map(({ name }) => name);
 // const items = ["maggi noodles"];

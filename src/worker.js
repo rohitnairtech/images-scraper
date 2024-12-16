@@ -42,6 +42,8 @@ async function processSubBatch(subBatch){
       try {
         const response = await axios.get(url, { responseType: "arraybuffer" });
         await convertPngToWebp(response.data, `${process.cwd()}/userImages/${itemName}.webp`);
+        // file name has to be unique, for ex if three images - itemName-1, itemName-2 & itemName-3
+        // write the logic to update the image in the DB 
       } catch (downloadError) {
         console.error(
           `${itemName} Failed to download image: ${url}`,
