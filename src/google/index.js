@@ -177,7 +177,7 @@ class GoogleScraper {
         });
       
         // Wait for thumbnails to load
-        await page.waitForSelector('g-img.mNsIhb img.YQ4gaf', { visible: true, timeout: 30000 });
+        await page.waitForSelector('g-img.mNsIhb img.YQ4gaf', { visible: true, timeout: 90000 });
       
         // Collect all thumbnail elements
         const thumbnails = await page.$$('g-img.mNsIhb img.YQ4gaf');
@@ -225,7 +225,7 @@ class GoogleScraper {
       
           // Go back to the search results page
           await page.goBack({ waitUntil: 'networkidle2' });
-          await page.waitForSelector('g-img.mNsIhb img.YQ4gaf', { visible: true, timeout: 30000 });
+          await page.waitForSelector('g-img.mNsIhb img.YQ4gaf', { visible: true, timeout: 90000 });
         }
       };
       
