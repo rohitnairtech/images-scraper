@@ -60,7 +60,7 @@ async function processSubBatch(subBatch) {
         const response = await axios.get(url, { responseType: "arraybuffer" });
         const fileName = `${itemName}-${index + 1}.webp`;
         await convertPngToWebp(response.data, `${process.cwd()}/userImages/${fileName.replace(/\//g, '\\/')}`);
-        images.push(`/upload/${dbName}/images/${fileName}`)
+        images.push(`/uploads/${dbName}/images/${fileName}`)
         // file name has to be unique, for ex if three images - itemName-1, itemName-2 & itemName-3
         // write the logic to update the image in the DB 
       } catch (downloadError) {
