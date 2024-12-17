@@ -52,7 +52,7 @@ async function processSubBatch(subBatch) {
   const batchResult = await Scraper.listImageUrls(subBatchNames, 3);
   console.log(batchResult);
   for (const itemName of Object.keys(batchResult)) {
-    const item_id = new ObjectId.createFromHexString(lookup[itemName]);
+    const item_id = new ObjectId(lookup[itemName]);
     const images = []
     for (const [index, url] of batchResult[itemName].entries()) {
       console.log(`Index: ${index}, URL: ${url}`);
