@@ -12,7 +12,12 @@ const db = client.db(dbName);
 const collection = db.collection('items');
 
 // add the logic to check if 1. it has image key 2. if the array is empty
-const records = await collection.find({}).toArray(); 
+const records = await collection.find({
+  $and: [
+    { images: { $exists: true } },
+    { images: { $ne: [] } }
+  ]
+}).toArray(); 
 
 const items = records.map(({name, _id})=>{return {name, _id: String(_id)}});
 // const items = [{name:'maggi atta noodles', _id: 'ad3211aa'}]

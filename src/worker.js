@@ -5,7 +5,7 @@ const { promises: fs } = require("fs");
 const axios = require("axios")
 const sharp = require("sharp");
 
-const { MongoClient } = require('mongodb');
+const { MongoClient, ObjectId } = require('mongodb');
 
 const url = 'mongodb://localhost:27017';
 const dbName = 'pos_rapsap_1'; // change the dbName
@@ -45,14 +45,14 @@ const checkAndCreateFolder = async (path) => {
 async function processSubBatch(subBatch) {
   console.log(subBatch);
   const lookup = {};
-  const subBatchNames = subBatch.map(({ name }) => {
-    lookup[name.replace(/\s/g, '')] = name;
+  const subBatchNames = subBatch.map(({ name, _id }) => {
+    lookup[name.replace(/\s/g, '')] = _id;
     return name
   })
   const batchResult = await Scraper.listImageUrls(subBatchNames, 3);
   console.log(batchResult);
   for (const itemName of Object.keys(batchResult)) {
-    const itemInDB = await collection.findOne({ name: lookup[itemName] });
+    const itemInDB = await collection.findOne({ _id: new ObjectId.createFromHexString(lookup[itemName]) });
     // console.log({ itemInDB })
     if (!itemInDB || itemInDB.images.length) {
       console.log("item not found or images already exists for these item", { itemInDB, images: itemInDB.images })
