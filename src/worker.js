@@ -53,7 +53,7 @@ async function processSubBatch(subBatch) {
   console.log(batchResult);
   for (const itemName of Object.keys(batchResult)) {
     const itemInDB = await collection.findOne({ name: lookup[itemName] });
-    console.log({ itemInDB })
+    // console.log({ itemInDB })
     if (!itemInDB || itemInDB.images.length) {
       console.log("item not found or images already exists for these item", { itemInDB, images: itemInDB.images })
       continue;
