@@ -5,6 +5,14 @@ const { promises: fs } = require("fs");
 const axios = require("axios")
 const sharp = require("sharp");
 
+const { MongoClient } = require('mongodb');
+
+const url = 'mongodb://localhost:27017';
+const dbName = 'pos_rapsap_1'; // change the dbName
+const client = new MongoClient(url);
+await client.connect();
+const db = client.db(dbName);
+const collection = db.collection('items');
 
 const convertPngToWebp = async (imageBuffer, outputPath) => {
   try {
@@ -34,18 +42,30 @@ const checkAndCreateFolder = async (path) => {
   }
 }
 
-async function processSubBatch(subBatch){
+async function processSubBatch(subBatch) {
   console.log(subBatch);
-  const subBatchNames = subBatch.map(({name})=>name)
+  const lookup = {};
+  const subBatchNames = subBatch.map(({ name }) => {
+    lookup[name.replace(/\s/g, '')] = name;
+    return name
+  })
   const batchResult = await Scraper.listImageUrls(subBatchNames, 3);
   console.log(batchResult);
   for (const itemName of Object.keys(batchResult)) {
+    const itemInDB = await collection.findOne({ name: lookup[itemName] });
+    console.log({ itemInDB })
+    if (!itemInDB || itemInDB.images.length) {
+      console.log("item not found or images already exists for these item", { itemInDB, images: itemInDB.images })
+      continue;
+    }
+    const images = []
     for (const [index, url] of batchResult[itemName].entries()) {
       console.log(`Index: ${index}, URL: ${url}`);
       try {
         const response = await axios.get(url, { responseType: "arraybuffer" });
-        const fileName = `${itemName}-${index+1}.webp`;
+        const fileName = `${itemName}-${index + 1}.webp`;
         await convertPngToWebp(response.data, `${process.cwd()}/userImages/${fileName}`);
+        images.push(`/upload/${dbName}/images/${fileName}`)
         // file name has to be unique, for ex if three images - itemName-1, itemName-2 & itemName-3
         // write the logic to update the image in the DB 
       } catch (downloadError) {
@@ -55,33 +75,40 @@ async function processSubBatch(subBatch){
         );
       }
     }
+    if (images.length) {
+      const { modifiedCount } = await collection.updateOne({ _id: itemInDB._id }, { $set: { images } });
+      if (!modifiedCount) throw new Error("Failed to update item!");
+      console.log(`Added ${images.length} images to ${itemInDB.name}`)
+    } else {
+      console.log(`No images found for ${itemInDB.name}`)
+    }
   }
   return batchResult;
 }
 
 async function processBatch(batch) {
   const batchSize = 50; // change this if you want to process more at a time per instance
-  const numberOfBatch = Math.ceil(batch.length/batchSize);
+  const numberOfBatch = Math.ceil(batch.length / batchSize);
   console.log("numberOfBatch ", numberOfBatch);
-  if(numberOfBatch > 1){
+  if (numberOfBatch > 1) {
     const subBatches = Array.from({ length: numberOfBatch }, (_, i) =>
       batch.slice(i * batchSize, (i + 1) * batchSize)
     );
     console.log("subBatches", subBatches);
     const subBatchLastIndex = subBatches.length - 1;
-    if(subBatches[subBatchLastIndex].length < 10){
+    if (subBatches[subBatchLastIndex].length < 10) {
       subBatches[subBatchLastIndex - 1].push(...subBatches[subBatchLastIndex]);
       subBatches.pop();
     }
     console.log("subBatches", subBatches);
     const batchResult = [];
-    for(let x = 0; x < subBatches.length; x++){
+    for (let x = 0; x < subBatches.length; x++) {
       const result = await processSubBatch(subBatches[x]);
       batchResult.push(result);
     }
     return batchResult;
   }
-  
+
   // slice the data, loop across each subBatchs
 
   const batchResult = await processSubBatch(batch);
