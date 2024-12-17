@@ -52,12 +52,7 @@ async function processSubBatch(subBatch) {
   const batchResult = await Scraper.listImageUrls(subBatchNames, 3);
   console.log(batchResult);
   for (const itemName of Object.keys(batchResult)) {
-    const itemInDB = await collection.findOne({ _id: new ObjectId.createFromHexString(lookup[itemName]) });
-    // console.log({ itemInDB })
-    if (!itemInDB || itemInDB.images.length) {
-      console.log("item not found or images already exists for these item", { itemInDB, images: itemInDB.images })
-      continue;
-    }
+    const item_id = new ObjectId.createFromHexString(lookup[itemName]);
     const images = []
     for (const [index, url] of batchResult[itemName].entries()) {
       console.log(`Index: ${index}, URL: ${url}`);
@@ -76,11 +71,11 @@ async function processSubBatch(subBatch) {
       }
     }
     if (images.length) {
-      const { modifiedCount } = await collection.updateOne({ _id: itemInDB._id }, { $set: { images } });
+      const { modifiedCount } = await collection.updateOne({ _id: item_id }, { $set: { images } });
       if (!modifiedCount) throw new Error("Failed to update item!");
-      console.log(`Added ${images.length} images to ${itemInDB.name}`)
+      console.log(`Added ${images.length} images to ${itemName} ${item_id}`)
     } else {
-      console.log(`No images found for ${itemInDB.name}`)
+      console.log(`No images found for ${itemName} ${item_id}`)
     }
   }
   return batchResult;
