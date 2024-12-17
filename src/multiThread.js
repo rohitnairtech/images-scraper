@@ -15,7 +15,7 @@ const collection = db.collection('items');
 const records = await collection.find({
   $and: [
     { images: { $exists: true } },
-    { images: { $ne: [] } }
+    { images: { $size: 0 } }
   ]
 }).toArray(); 
 
