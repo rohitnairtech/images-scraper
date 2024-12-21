@@ -4,7 +4,7 @@ import path from 'path';
 import { MongoClient } from 'mongodb';
 
 const url = 'mongodb://localhost:27017';
-const dbName = 'pos_rapsap_1'; // change the dbName
+const dbName = 'pos_apoorthi_mart_1'; // change the dbName
 
 const client = new MongoClient(url);
 await client.connect();
@@ -19,8 +19,11 @@ const records = await collection.find({
   ]
 }).toArray(); 
 
-const items = records.map(({name, _id})=>{return {name, _id: String(_id)}});
+const items = records.map(({name, _id}) => { return {name, _id: String(_id)} });
+
 // const items = [{name:'maggi atta noodles', _id: 'ad3211aa'}]
+// console.log(items.length);
+// process.exit(0)
 // const items = ["maggi noodles"];
 const numWorkers = 4;
 const batchSize = Math.ceil(items.length / numWorkers);

@@ -8,7 +8,7 @@ const sharp = require("sharp");
 const { MongoClient, ObjectId } = require('mongodb');
 
 const url = 'mongodb://localhost:27017';
-const dbName = 'pos_rapsap_1'; // change the dbName
+const dbName = 'pos_apoorthi_mart_1'; // change the dbName
 const client = new MongoClient(url);
 await client.connect();
 const db = client.db(dbName);
@@ -26,6 +26,29 @@ const convertPngToWebp = async (imageBuffer, outputPath) => {
     console.error("Error converting image:", error.message);
   }
 };
+
+function sanitizeFilename(filename) {
+  const invalidChars = /[\/\\:*?"<>|]/g;
+
+  let sanitized = filename.replace(invalidChars, "_");
+
+  sanitized = sanitized.trim();
+
+  sanitized = sanitized.replace(/[\s_]+/g, "_");
+
+  const maxLength = 255;
+  if (sanitized.length > maxLength) {
+    const extensionIndex = sanitized.lastIndexOf(".");
+    if (extensionIndex > -1 && extensionIndex > maxLength - 10) {
+      const namePart = sanitized.slice(0, maxLength - (sanitized.length - extensionIndex));
+      sanitized = `${namePart}${sanitized.slice(extensionIndex)}`;
+    } else {
+      sanitized = sanitized.slice(0, maxLength);
+    }
+  }
+
+  return sanitized;
+}
 
 const checkAndCreateFolder = async (path) => {
   try {
@@ -58,7 +81,7 @@ async function processSubBatch(subBatch) {
       console.log(`Index: ${index}, URL: ${url}`);
       try {
         const response = await axios.get(url, { responseType: "arraybuffer" });
-        const fileName = `${itemName}-${index + 1}.webp`;
+        const fileName = sanitizeFilename(`${itemName}-${index + 1}.webp`);
         await convertPngToWebp(response.data, `${process.cwd()}/userImages/${fileName.replace(/\//g, '\\/')}`);
         images.push(`/uploads/${dbName}/images/${fileName}`)
         // file name has to be unique, for ex if three images - itemName-1, itemName-2 & itemName-3
